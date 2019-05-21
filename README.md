@@ -1,3 +1,15 @@
+### Usage:
+
++ `./run-tests.sh` - compile and run tests
++ `make clean` - clean the mess
+
+##### Extra usage just in case:
+
++ `make` - compile handler sources
++ `make tests` - compile tests
+
+---
+
 # Обработка сигналов
 
 Необходимо написать обработчик сигнала SIGSEGV. Обработчик должен:
