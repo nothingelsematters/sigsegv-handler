@@ -5,9 +5,31 @@
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
+#include <unistd.h>
+#include <cstdio>
+#include <stdlib.h>
+#include <utility>
+#include <cstring>
 #include <limits>
-#include <iostream>
 
+void writer(const char* buffer) {
+    write(1, buffer, strlen(buffer));
+}
+
+void writer(long long num) {
+    if (num) {
+        writer(num >> 4);
+        long long digit = num & ((1ll << 4) - 1);
+        char symbol = ((digit > 9 ? 'a' - 10 : '0') + digit);
+        write(1, &symbol, 1);
+    }
+}
+
+template <typename Arg, typename ArgS, typename... Args>
+void writer(Arg arg, ArgS arg2, Args... args) {
+    writer(arg);
+    writer(arg2, args...);
+}
 
 void set_handler(int signo, void (*handler) (int, siginfo_t*, void*)) {
     struct sigaction act{};
@@ -20,7 +42,7 @@ void set_handler(int signo, void (*handler) (int, siginfo_t*, void*)) {
     act.sa_mask = set;
 
     if (sigaction(signo, &act, nullptr) == -1) {
-        perror("setting signal error occurred");
+        std::perror("setting signal error occurred");
         exit(EXIT_FAILURE);
     }
 }
@@ -36,7 +58,7 @@ void help_handler(int sig, siginfo_t* info, void* context) {
 }
 
 void handler(int sig, siginfo_t *info, void *context) {
-    static const std::pair<std::string, int> regs[] = {
+    static const std::pair<const char*, int> regs[] = {
         {"R8", REG_R8},
         {"R9", REG_R9},
         {"R10", REG_R10},
@@ -62,32 +84,32 @@ void handler(int sig, siginfo_t *info, void *context) {
         {"OLDMASK", REG_OLDMASK},
     };
 
-    std::cout << "Aborted: " << strsignal(sig) << '\n';
-    std::string reason;
+    // exit(EXIT_FAILURE);
+    writer("Aborted: ", static_cast<const char*>(strsignal(sig)), "\n");
+    writer("- reason: ");
     switch (info->si_code) {
         case SEGV_MAPERR:
-            reason = "address not mapped";
+            writer("address not mapped");
             break;
         case SEGV_ACCERR:
-            reason = "invalid permissions";
+            writer("invalid permissions");
             break;
         default:
-            reason = "¯\\_(ツ)_/¯";
+            writer("¯\\_(ツ)_/¯");
     }
-    std::cout << "- reason: " << reason << '\n';
 
     intptr_t address = reinterpret_cast<intptr_t>(info->si_addr);
-    std::cout << "- fault address: " << std::hex << address << '\n';
+    writer("\n- fault address: ", address, "\n");
 
     greg_t* gregs = reinterpret_cast<ucontext_t *>(context)->uc_mcontext.gregs;
-    std::cout << "- general purpose registers:\n";
+    writer("- general purpose registers:\n");
     for (auto [name, index] : regs) {
-        std::cout << "  + " << name << ": " << gregs[index] << '\n';
+        writer("  + ", name, ": ", gregs[index], "\n");
     }
 
-    std::cout << "- memory nearby: ";
+    writer("- memory nearby: ");
     if (address == 0) {
-        std::cout << "nullptr, apparently\n";
+        writer("nullptr, apparently\n");
         exit(EXIT_FAILURE);
     }
 
@@ -104,13 +126,13 @@ void handler(int sig, siginfo_t *info, void *context) {
         set_handler(SIGSEGV, help_handler);
 
         if (addr == address) {
-            std::cout << "!!";
+            writer("!!");
         } else if (setjmp(jmpbuf) != 0) {
-            std::cout << "??";
+            writer("??");
         } else {
-            std::cout << +*reinterpret_cast<char*>(addr);
+            writer(+*reinterpret_cast<char*>(addr));
         }
-        std::cout << ' ';
+        writer(" ");
     }
 
     exit(EXIT_FAILURE);
