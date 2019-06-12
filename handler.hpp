@@ -16,12 +16,20 @@ void writer(const char* buffer) {
     write(1, buffer, strlen(buffer));
 }
 
-void writer(long long num) {
+void writer_helper(long long num) {
     if (num) {
-        writer(num >> 4);
+        writer_helper(num >> 4);
         long long digit = num & ((1ll << 4) - 1);
         char symbol = ((digit > 9 ? 'a' - 10 : '0') + digit);
         write(1, &symbol, 1);
+    }
+}
+
+void writer(long long num) {
+    if (num) {
+        writer_helper(num);
+    } else {
+        writer("0");
     }
 }
 
