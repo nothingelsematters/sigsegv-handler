@@ -11,3 +11,4 @@ then
         echo -e "\n---------------------"
     done
 fi
+make clean

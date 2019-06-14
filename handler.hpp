@@ -92,7 +92,6 @@ void handler(int sig, siginfo_t *info, void *context) {
         {"OLDMASK", REG_OLDMASK},
     };
 
-    // exit(EXIT_FAILURE);
     writer("Aborted: ", static_cast<const char*>(strsignal(sig)), "\n");
     writer("- reason: ");
     switch (info->si_code) {
@@ -118,7 +117,7 @@ void handler(int sig, siginfo_t *info, void *context) {
     writer("- memory nearby: ");
     if (address == 0) {
         writer("nullptr, apparently\n");
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     }
 
     const size_t SIZE = sizeof(char);
@@ -143,7 +142,7 @@ void handler(int sig, siginfo_t *info, void *context) {
         writer(" ");
     }
 
-    exit(EXIT_FAILURE);
+    _exit(EXIT_FAILURE);
 }
 
 
